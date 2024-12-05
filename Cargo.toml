@@ -1,0 +1,31 @@
+# cargo-features = ["edition2024"]
+
+[package]
+authors = ["Workoss <workoss@icloud.com>"]
+description = "rquickjs demo"
+edition = "2021"
+homepage = "https://github.com/ossworker/rquickjs-demo"
+license = "Apache-2.0"
+name = "rquickjs-demo"
+repository = "https://github.com/ossworker/rquickjs-demo.git"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1.0.94"
+# rquickjs = {version = "0.8.1", features = ["full-async", "parallel"]}
+# rquickjs-core = "0.8.1"
+# rquickjs-sys = "0.8.1"
+llrt_modules = {git = "https://github.com/awslabs/llrt"}
+rquickjs = {git = "https://github.com/DelSkayn/rquickjs.git", version = "0.8.1", features = ["macro", "loader", "rust-alloc", "futures", "either", "properties"]}
+thiserror = "2"
+toasty = "0.1.1"
+tokio = {version = "1.42.0"}
+# tokio = {version = "1.42.0", features = ["sync", "macros", "io-util", "rt", "time"]}
+# tokio = {version = "1.42.0", features = ["full"]}
+
+[features]
+default = ["tokio-async"]
+
+tokio-async = ["tokio/full"]
+
+tokio-sync = ["tokio/sync", "tokio/macros", "tokio/io-util", "tokio/rt", "tokio/time"]

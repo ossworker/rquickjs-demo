@@ -1,0 +1,17 @@
+
+[package]
+authors = ["Workoss <workoss@icloud.com>"]
+description = "rquickjs demo"
+edition = "2024"
+homepage = "https://github.com/ossworker/rquickjs-demo"
+license = "Apache-2.0"
+name = "extension_rquickjs"
+repository = "https://github.com/ossworker/rquickjs-demo.git"
+version = "0.1.0"
+
+[dependencies]
+rquickjs = {version = "0.8", features = ["loader"]}
+
+[dev-dependencies]
+rquickjs = {version = "0.8", features = ["futures", "macro", "parallel"]}
+tokio = {version = "1.42", features = ["full"]}

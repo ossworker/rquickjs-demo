@@ -1,9 +1,9 @@
-# cargo-features = ["edition2024"]
+cargo-features = ["edition2024"]
 
 [package]
 authors = ["Workoss <workoss@icloud.com>"]
 description = "rquickjs demo"
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/ossworker/rquickjs-demo"
 license = "Apache-2.0"
 name = "rquickjs-demo"
@@ -15,17 +15,33 @@ anyhow = "1.0.94"
 # rquickjs = {version = "0.8.1", features = ["full-async", "parallel"]}
 # rquickjs-core = "0.8.1"
 # rquickjs-sys = "0.8.1"
-llrt_modules = {git = "https://github.com/awslabs/llrt"}
+# llrt_modules = {git = "https://github.com/awslabs/llrt"}
 rquickjs = {git = "https://github.com/DelSkayn/rquickjs.git", version = "0.8.1", features = ["macro", "loader", "rust-alloc", "futures", "either", "properties"]}
-thiserror = "2"
-toasty = "0.1.1"
-tokio = {version = "1.42.0"}
+# thiserror = "2"
+# toasty = "0.1"
+tokio = {version = "1.42"}
 # tokio = {version = "1.42.0", features = ["sync", "macros", "io-util", "rt", "time"]}
 # tokio = {version = "1.42.0", features = ["full"]}
-
+# futures = "0.3"
 [features]
-default = ["tokio-async"]
+default = ["tokio-sync"]
 
 tokio-async = ["tokio/full"]
+# tokio-async = []
 
-tokio-sync = ["tokio/sync", "tokio/macros", "tokio/io-util", "tokio/rt", "tokio/time"]
+# tokio-sync = []
+# tokio-sync = ["tokio/sync", "tokio/macros", "tokio/io-util", "tokio/rt", "tokio/time"]
+tokio-sync = ["tokio/sync", "tokio/io-util", "tokio/rt", "tokio/time"]
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+
+single_range_in_vec_init = "allow"
+
+style = {level = "allow", priority = -1}
+
+[workspace]
+members = [
+  "crates/extension_rquickjs",
+]

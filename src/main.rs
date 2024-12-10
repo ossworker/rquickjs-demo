@@ -1,14 +1,14 @@
 use core::str;
 
-use llrt_modules::{
-    os::OsModule,
-    path::PathModule,
-    url::{self, UrlModule},
-};
+// use llrt_modules::{
+// os::OsModule,
+// path::PathModule,
+// url::{self, UrlModule},
+// };
 use rquickjs::{
     async_with, convert, loader::{
         BuiltinLoader, BuiltinResolver, FileResolver, ModuleLoader, ScriptLoader,
-    }, module::{Evaluated, ModuleDef}, prelude::Func, promise::{MaybePromise, Promised}, qjs, AsyncContext, AsyncRuntime, CatchResultExt, Context, Ctx, Exception, FromJs as _, Module, Runtime, Value
+    }, module::{Evaluated, ModuleDef}, prelude::Func, promise::{MaybePromise, Promised}, qjs, AsyncContext, AsyncRuntime, CatchResultExt, Context, Ctx, Exception, FromJs as _, Module, Runtime, Value,
 };
 
 fn print(msg: String) {
@@ -18,13 +18,15 @@ fn print(msg: String) {
 async fn delay(millsecond: u32) {
     let duration = std::time::Duration::from_millis(millsecond.into());
     tokio::time::sleep(duration).await;
+    // sleep(duration);
 }
 
 #[cfg(feature = "tokio-sync")]
-fn main()->anyhow::Result<()>{
-    // let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
-    // rt.block_on(async_run_js()).unwrap();
-    sync_run_js().unwrap();
+fn main() -> anyhow::Result<()> {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+    rt.block_on(async_run_js())?;
+    // use futures::executor::block_on;
+    // block_on(async_run_js()).unwrap();
     Ok(())
 }
 
@@ -35,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
     async_run_js().await
 }
 
- fn sync_run_js()->anyhow::Result<()>{
+fn sync_run_js() -> anyhow::Result<()> {
     let runtime = Runtime::new()?;
     let context = Context::full(&runtime)?;
     let resolver = (
@@ -50,14 +52,15 @@ async fn main() -> anyhow::Result<()> {
             .with_path("../../target/debug")
             .with_native(),
     );
-    
+
 
     let loader = (
         BuiltinLoader::default().with_module("dayjs", include_str!("../js/dayjs.mjs")),
         ModuleLoader::default()
-        .with_module("path", PathModule)
-        .with_module("url", UrlModule)
-        .with_module("os", OsModule),
+        // .with_module("path", PathModule)
+        // .with_module("url", UrlModule)
+        // .with_module("os", OsModule)
+        ,
         ScriptLoader::default(),
         // dyn-load
         // NativeLoader::default(), 
@@ -89,40 +92,39 @@ async fn main() -> anyhow::Result<()> {
     };
     "#;
     let _result = context.with(|ctx| {
-
         let global = ctx.globals();
 
-        url::init(&ctx).unwrap();
+        // url::init(&ctx).unwrap();
 
-        global.set("print",Func::from(|s|print(s))).unwrap();
-        global.set("delay", Func::from(|millsecond|Promised(delay(millsecond)))).unwrap();
+        global.set("print", Func::from(|s| print(s))).unwrap();
+        global.set("delay", Func::from(|millsecond| Promised(delay(millsecond)))).unwrap();
 
-        if let Err(e) = Module::declare(ctx.clone(), "main", code).catch(&ctx){
+        if let Err(e) = Module::declare(ctx.clone(), "main", code).catch(&ctx) {
             eprintln!("module declare error:{e:#?}");
         }
-       
+
         // Module::declare(ctx.clone(), "main", code)
         // .catch(&ctx)
         // .map_err(|e|anyhow::anyhow!("declare catch1:{:#?}",e))
         // .unwrap();
         //获取 handler function
         let m: rquickjs::Object = Module::import(&ctx, "main")
-        .catch(&ctx)
-        .map_err(|e|anyhow::anyhow!("import catch1:{:#?}",e))?
-        .finish().unwrap();
+            .catch(&ctx)
+            .map_err(|e| anyhow::anyhow!("import catch1:{:#?}",e))?
+            .finish().unwrap();
         // .into_future()
         // .map_err(|e|anyhow::anyhow!("import catch2:{:#?}",e))?
         ;
         println!("{m:#?}");
 
         let handler: rquickjs::Function = m.get("handler")
-        // .catch(&ctx)
-        .map_err(|e|anyhow::anyhow!("get handler:{:#?}",e))?;
+            // .catch(&ctx)
+            .map_err(|e| anyhow::anyhow!("get handler:{:#?}",e))?;
         // 执行 handler
-        let handler_promise: MaybePromise = handler.call(()).catch(&ctx).map_err(|e|anyhow::anyhow!("call handler:{:#?}",e))?;
-        let handler_result = handler_promise.finish::<Value>().catch(&ctx).map_err(|e|anyhow::anyhow!("call result:{:#?}",e))?;
-        println!("handler_result:{:#?}",val_to_string(&ctx, handler_result)?);    
-        Ok::<_,anyhow::Error>(())
+        let handler_promise: MaybePromise = handler.call(()).catch(&ctx).map_err(|e| anyhow::anyhow!("call handler:{:#?}",e))?;
+        let handler_result = handler_promise.finish::<Value>().catch(&ctx).map_err(|e| anyhow::anyhow!("call result:{:#?}",e))?;
+        println!("handler_result:{:#?}", val_to_string(&ctx, handler_result)?);
+        Ok::<_, anyhow::Error>(())
     }).unwrap();
 
     if runtime.is_job_pending() {
@@ -136,14 +138,14 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn async_run_js()->anyhow::Result<()>{
+async fn async_run_js() -> anyhow::Result<()> {
     let runtime = AsyncRuntime::new()?;
     let context = AsyncContext::full(&runtime).await?;
     let resolver = (
         BuiltinResolver::default()
-            .with_module("path")
-            .with_module("url")
-            .with_module("os")
+            // .with_module("path")
+            // .with_module("url")
+            // .with_module("os")
             .with_module("main")
             .with_module("dayjs"),
         FileResolver::default()
@@ -151,14 +153,15 @@ async fn async_run_js()->anyhow::Result<()>{
             .with_path("../../target/debug")
             .with_native(),
     );
-    
+
 
     let loader = (
         BuiltinLoader::default().with_module("dayjs", include_str!("../js/dayjs.mjs")),
         ModuleLoader::default()
-        .with_module("path", PathModule)
-        .with_module("url", UrlModule)
-        .with_module("os", OsModule),
+        // .with_module("path", PathModule)
+        // .with_module("url", UrlModule)
+        // .with_module("os", OsModule)
+        ,
         ScriptLoader::default(),
         // dyn-load
         // NativeLoader::default(), 
@@ -168,24 +171,24 @@ async fn async_run_js()->anyhow::Result<()>{
 
     let code = r#"
     import dayjs from 'dayjs'
-    import {version,arch,platform} from 'os'
-    import url from 'url'
-    import {dirname,basename} from 'path'    
+    // import {version,arch,platform} from 'os'
+    // import url from 'url'
+    // import {dirname,basename} from 'path'    
     export const handler = async () => {
         //out> Darwin Kernel Version 24.1.0: Thu Oct 10 21:02:27 PDT 2024; root:xnu-11215.41.3~2/RELEASE_X86_64
-        print(version())
+        // print(version())
         //out> x64
-        print(arch())
+        // print(arch())
             
         //out> darwin
-        print(platform())
+        // print(platform())
 
         print(dayjs().format())
 
-        print(typeof url)
+        // print(typeof url)
         await delay(1000)
         //out>  workoss
-        print(basename('/home/workoss/'))
+        // print(basename('/home/workoss/'))
         return dayjs().format();
     };
     "#;
@@ -200,7 +203,7 @@ async fn async_run_js()->anyhow::Result<()>{
 
         let global = ctx.globals();
 
-        url::init(&ctx).unwrap();
+        // url::init(&ctx).unwrap();
 
         global.set("print",Func::from(|s|print(s))).unwrap();
         global.set("delay", Func::from(|millsecond|Promised(delay(millsecond)))).unwrap();
@@ -378,11 +381,11 @@ impl ModuleEvaluator {
 
 #[cfg(test)]
 mod tests {
-    use llrt_modules::{
-        os::OsModule,
-        path::PathModule,
-        url::{self, UrlModule},
-    };
+    // use llrt_modules::{
+    //     os::OsModule,
+    //     path::PathModule,
+    //     url::{self, UrlModule},
+    // };
     use rquickjs::{AsyncContext, AsyncRuntime, CatchResultExt, Module, async_with};
     use rquickjs::{Value, promise::MaybePromise};
     use rquickjs::{
@@ -490,35 +493,35 @@ mod tests {
     }
 
     #[cfg(feature = "tokio-async")]
-#[tokio::test]
-async fn test_01() -> anyhow::Result<()> {
-    let runtime = AsyncRuntime::new()?;
-    let context = AsyncContext::full(&runtime).await?;
+    #[tokio::test]
+    async fn test_01() -> anyhow::Result<()> {
+        let runtime = AsyncRuntime::new()?;
+        let context = AsyncContext::full(&runtime).await?;
 
-    let resolver = (
-        BuiltinResolver::default()
-            .with_module("path")
-            .with_module("url")
-            .with_module("os")
-            .with_module("dayjs"),
-        FileResolver::default()
-            .with_path("./")
-            .with_path("../../target/debug")
-            .with_native(),
-    );
+        let resolver = (
+            BuiltinResolver::default()
+                .with_module("path")
+                .with_module("url")
+                .with_module("os")
+                .with_module("dayjs"),
+            FileResolver::default()
+                .with_path("./")
+                .with_path("../../target/debug")
+                .with_native(),
+        );
 
-    let loader = (
-        BuiltinLoader::default().with_module("dayjs", include_str!("../js/dayjs.mjs")),
-        ModuleLoader::default()
-            .with_module("path", PathModule)
-            .with_module("url", UrlModule)
-            .with_module("os", OsModule),
-        ScriptLoader::default(),
-    );
+        let loader = (
+            BuiltinLoader::default().with_module("dayjs", include_str!("../js/dayjs.mjs")),
+            ModuleLoader::default()
+                .with_module("path", PathModule)
+                .with_module("url", UrlModule)
+                .with_module("os", OsModule),
+            ScriptLoader::default(),
+        );
 
-    runtime.set_loader(resolver, loader).await;
+        runtime.set_loader(resolver, loader).await;
 
-    let code = r#"
+        let code = r#"
             // const {a} = await import('index.js);
             // await import('index.js');
             import {version,arch,platform} from 'os'
@@ -547,11 +550,11 @@ async fn test_01() -> anyhow::Result<()> {
            
         "#;
 
-    // ModuleEvaluator::eval_rust::<OsModule>(ctx.clone(), "os")
-    //     .await
-    //     .unwrap();
+        // ModuleEvaluator::eval_rust::<OsModule>(ctx.clone(), "os")
+        //     .await
+        //     .unwrap();
 
-    async_with!(context => |ctx| {
+        async_with!(context => |ctx| {
     //   import { arch,version } from "os";
         let global = ctx.globals();
 
@@ -603,20 +606,19 @@ async fn test_01() -> anyhow::Result<()> {
         // .finish::<Value>()
         // .unwrap();
     })
-    .await;
+            .await;
 
-    if runtime.is_job_pending().await {
-        runtime
-            .execute_pending_job()
-            .await
-            .map_err(|e| anyhow::anyhow!("failed to execute pending_job: {:?}", e))
-            .unwrap();
+        if runtime.is_job_pending().await {
+            runtime
+                .execute_pending_job()
+                .await
+                .map_err(|e| anyhow::anyhow!("failed to execute pending_job: {:?}", e))
+                .unwrap();
+        }
+
+        runtime.idle().await;
+
+        Ok(())
     }
-
-    runtime.idle().await;
-
-    Ok(())
-}
-
 }
 
